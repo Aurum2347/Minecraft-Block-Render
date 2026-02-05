@@ -36,9 +36,6 @@
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   document.body.appendChild(renderer.domElement);
 
-  // ==============================
-  // Три грани — как в твоём лучшем варианте
-  // ==============================
   const size = 1;
   const front = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial());
   front.position.z = 0.5;
@@ -106,7 +103,6 @@
         undefined,
         (err) => {
           console.warn(`Не удалось загрузить ${['front','side','top'][i]}:`, err);
-          // Оставляем белый материал с тенью
           const mat = materials[[ 'front', 'side', 'top' ][i]];
           mat.color.copy(new THREE.Color(0xffffff)).multiplyScalar(shadowValues[i]);
           mat.needsUpdate = true;
@@ -131,4 +127,5 @@
 </script>
 
 </body>
+
 </html>
