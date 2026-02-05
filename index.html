@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Minecraft Block — Custom 3 Faces</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #1a1a1a; }
+  </style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+
+<script>
+  // ==============================
+  // 🔧 КОНФИГУРАЦИЯ (меняй здесь)
+  // ==============================
+  const TEXTURES = {
+    front: "acacia_log.png",      // передняя грань (Z+)
+    side:  "acacia_log.png",      // правая боковая (X+)
+    top:   "acacia_log_top.png"   // верхняя (Y+)
+  };
+
+  const SHADOWS = [0.75, 0.375, 1]; // [front, side, top]
+
+  // ==============================
+  // Сцена и камера (не менять!)
+  // ==============================
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x222222);
+
+  const camera = new THREE.OrthographicCamera(-2, 2, 2, -2, 0.1, 100);
+  camera.position.set(2.2, 1.4, 2.2);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  document.body.appendChild(renderer.domElement);
+
+  // ==============================
+  // Три грани — как в твоём лучшем варианте
+  // ==============================
+  const size = 1;
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial());
+  front.position.z = 0.5;
+
+  const side = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial());
+  side.position.x = 0.5;
+  side.rotation.y = Math.PI / 2;
+
+  const topFace = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial());
+  topFace.position.y = 0.5;
+  topFace.rotation.x = -Math.PI / 2;
+
+  const group = new THREE.Group();
+  group.add(front, side, topFace);
+  scene.add(group);
+
+  // ==============================
+  // Инициализация размера и проекции
+  // ==============================
+  function initCameraAndRenderer() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    renderer.setSize(w, h);
+
+    const aspect = w / h;
+    camera.left = -2 * aspect;
+    camera.right = 2 * aspect;
+    camera.top = 2;
+    camera.bottom = -2;
+    camera.updateProjectionMatrix();
+  }
+
+  // ==============================
+  // Загрузка трёх текстур и рендер
+  // ==============================
+  let loadedCount = 0;
+  const materials = { front: front.material, side: side.material, top: topFace.material };
+  const texturePaths = [TEXTURES.front, TEXTURES.side, TEXTURES.top];
+  const shadowValues = SHADOWS;
+
+  function onTextureLoaded(index, texture) {
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+    texture.generateMipmaps = false;
+
+    const mat = materials[[ 'front', 'side', 'top' ][index]];
+    mat.map = texture;
+    mat.color.copy(new THREE.Color(0xffffff)).multiplyScalar(shadowValues[index]);
+    mat.needsUpdate = true;
+
+    loadedCount++;
+    if (loadedCount === 3) {
+      renderer.render(scene, camera);
+    }
+  }
+
+  function loadAllTextures() {
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+
+    texturePaths.forEach((path, i) => {
+      loader.load(
+        path,
+        (texture) => onTextureLoaded(i, texture),
+        undefined,
+        (err) => {
+          console.warn(`Не удалось загрузить ${['front','side','top'][i]}:`, err);
+          // Оставляем белый материал с тенью
+          const mat = materials[[ 'front', 'side', 'top' ][i]];
+          mat.color.copy(new THREE.Color(0xffffff)).multiplyScalar(shadowValues[i]);
+          mat.needsUpdate = true;
+          loadedCount++;
+          if (loadedCount === 3) renderer.render(scene, camera);
+        }
+      );
+    });
+  }
+
+  // ==============================
+  // Запуск
+  // ==============================
+  initCameraAndRenderer();
+  loadAllTextures();
+
+  // Адаптация под размер окна
+  window.addEventListener('resize', () => {
+    initCameraAndRenderer();
+    renderer.render(scene, camera);
+  });
+</script>
+
+</body>
+</html>
